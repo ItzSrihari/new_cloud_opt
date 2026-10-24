@@ -33,21 +33,52 @@ SmartCloud Optimizer is an enterprise-grade cloud optimization platform specific
 
 ---
 
-## 🚀 Quickstart & One-Command Boot
+## 🚀 Quickstart & Boot Options
 
-### 1. Prerequisites
+### Option A: Docker Compose (Recommended)
+
+Run the entire platform with zero local environment dependencies:
+
+```bash
+# 1. (Optional) Configure Gemini API key for AI Copilot
+cp .env.example .env
+
+# 2. Build and start all 3 containers
+docker compose up --build
+```
+
+Or run in detached mode:
+```bash
+docker compose up -d
+```
+
+To run with live hot-reloading for development:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+To stop containers:
+```bash
+docker compose down
+```
+
+---
+
+### Option B: Local Node & Python Boot
+
+#### 1. Prerequisites
 - **Node.js**: v18+ (tested on Node v24)
 - **Python**: 3.10+ (tested on Python 3.15)
 - **pip packages**: `fastapi`, `uvicorn`, `numpy`, `pandas`, `scipy`, `httpx`, `pydantic`
 
-### 2. Single-Command Startup
+#### 2. Single-Command Startup
 From the monorepo root directory, run:
 
 ```bash
 npm run dev
 ```
 
-This concurrently boots:
+This boots:
 1. **Server 1 (`utho-infra-server`)**: `http://localhost:8001`
 2. **Server 2 (`optimizer-engine-server`)**: `http://localhost:8002`
 3. **Frontend (`frontend`)**: `http://localhost:3000`

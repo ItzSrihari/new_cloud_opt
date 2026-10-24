@@ -19,6 +19,8 @@ app.use(express.json());
 const CACHE_DIR = path.join(__dirname, '..', 'cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'analytics_cache.json');
 const CLI_RUNNER_PATH = path.join(__dirname, '..', 'analytics', 'cli_runner.py');
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python';
+const INFRA_SERVER_URL = process.env.INFRA_SERVER_URL || 'http://localhost:8001';
 
 interface AnalyticsState {
   resources: any[];
@@ -67,7 +69,7 @@ function loadAnalyticsCache(): boolean {
 if (!loadAnalyticsCache()) {
   console.log('[Optimizer-Server] Cache missing, running Python analytics generator...');
   try {
-    const child = spawn('python', [CLI_RUNNER_PATH, 'generate_all'], { stdio: 'inherit' });
+    const child = spawn(PYTHON_BIN, [CLI_RUNNER_PATH, 'generate_all'], { stdio: 'inherit', env: process.env });
     child.on('close', (code) => {
       console.log(`[Optimizer-Server] Generator completed with code ${code}`);
       loadAnalyticsCache();
@@ -245,7 +247,7 @@ app.get('/api/resources/:id/metrics', async (req: Request, res: Response) => {
   // Fetch full 30d time-series from Server 1 or generator
   let metrics: any[] = [];
   try {
-    const response = await fetch(`http://localhost:8001/infra/metrics?resource_id=${resourceId}`);
+    const response = await fetch(`${INFRA_SERVER_URL}/infra/metrics?resource_id=${resourceId}`);
     if (response.ok) {
       const data: any = await response.json();
       metrics = data.metrics || [];
@@ -361,7 +363,7 @@ app.post('/api/what-if', (req: Request, res: Response) => {
   const params = req.body;
 
   // Execute Python runner what_if via stdin
-  const child = spawn('python', [CLI_RUNNER_PATH, 'what_if']);
+  const child = spawn(PYTHON_BIN, [CLI_RUNNER_PATH, 'what_if'], { env: process.env });
   let output = '';
   let errorOutput = '';
 
