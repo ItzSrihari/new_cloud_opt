@@ -1,0 +1,146 @@
+"use client";
+
+import React from "react";
+import {
+  BarChart3,
+  Server,
+  Sparkles,
+  Sliders,
+  Bell,
+  BookOpen,
+  ChevronLeft,
+  ShieldCheck,
+  Zap,
+  Globe2,
+} from "lucide-react";
+
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  pendingRecCount?: number;
+  criticalAlertCount?: number;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  onToggle,
+  activeTab,
+  onTabChange,
+  pendingRecCount = 0,
+  criticalAlertCount = 0,
+}) => {
+  const tabs = [
+    { id: "overview", label: "Executive Command", icon: BarChart3, badge: null },
+    { id: "resources", label: "Resource Inventory", icon: Server, badge: "105" },
+    { id: "recommendations", label: "Recommendations Hub", icon: Sparkles, badge: pendingRecCount > 0 ? `${pendingRecCount}` : null },
+    { id: "simulator", label: "What-If Simulator", icon: Sliders, badge: "Policy" },
+    { id: "alerts", label: "Alerts & Forecast", icon: Bell, badge: criticalAlertCount > 0 ? `${criticalAlertCount}!` : null },
+    { id: "assumptions", label: "Assumptions & Formulas", icon: BookOpen, badge: null },
+  ];
+
+  return (
+    <aside
+      className={`fixed lg:sticky top-0 left-0 z-40 h-screen bg-slate-900 text-white flex flex-col border-r border-slate-800 transition-all duration-300 ease-in-out ${
+        isOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0 lg:w-20"
+      }`}
+    >
+      {/* Brand & Collapse Header */}
+      <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800">
+        <div className="flex items-center space-x-2.5 overflow-hidden">
+          <div className="w-8 h-8 rounded-full border-2 border-blue-500 flex items-center justify-center font-bold text-blue-400 text-sm flex-shrink-0">
+            ✓
+          </div>
+          {isOpen && (
+            <div className="flex flex-col whitespace-nowrap">
+              <span className="text-xl font-black tracking-tight text-white leading-none">
+                utho
+              </span>
+              <span className="text-[10px] text-blue-400 font-semibold tracking-wide">
+                SmartCloud Optimizer
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle Collapse Button on Desktop */}
+        <button
+          onClick={onToggle}
+          className="hidden lg:flex w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white items-center justify-center transition-all"
+          title={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          <ChevronLeft className={`w-4 h-4 transition-transform duration-200 ${!isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`w-full flex items-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-all relative ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-900/30 font-bold"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              }`}
+              title={!isOpen ? tab.label : undefined}
+            >
+              <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
+
+              {isOpen && (
+                <span className="ml-3 truncate">{tab.label}</span>
+              )}
+
+              {/* Badges */}
+              {tab.badge && isOpen && (
+                <span
+                  className={`ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    tab.id === "alerts"
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+                      : isActive
+                      ? "bg-blue-800 text-blue-200"
+                      : "bg-slate-800 text-slate-300"
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              )}
+
+              {/* Dot badge when collapsed */}
+              {!isOpen && tab.badge && (
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-400" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Sidebar Footer */}
+      <div className="p-3 border-t border-slate-800 bg-slate-950/40">
+        {isOpen ? (
+          <div className="space-y-2">
+            <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between">
+              <span>Sovereign Cloud</span>
+              <span className="text-emerald-400 font-mono">India Regions</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-mono text-slate-400">
+              <div className="bg-slate-800/80 p-1 rounded">Noida 3ms</div>
+              <div className="bg-slate-800/80 p-1 rounded">Blr 4ms</div>
+              <div className="bg-slate-800/80 p-1 rounded">Mum 2ms</div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center text-slate-400 py-1" title="India Sovereign Cloud">
+            <Globe2 className="w-5 h-5 text-blue-400" />
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+};
