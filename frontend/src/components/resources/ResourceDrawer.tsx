@@ -33,12 +33,14 @@ interface ResourceDrawerProps {
   resource: any | null;
   onClose: () => void;
   onRecommendationUpdated?: () => void;
+  liveTick?: any;
 }
 
 export const ResourceDrawer: React.FC<ResourceDrawerProps> = ({
   resource,
   onClose,
   onRecommendationUpdated,
+  liveTick,
 }) => {
   const [loading, setLoading] = useState(false);
   const [metricsData, setMetricsData] = useState<any[]>([]);
@@ -79,9 +81,17 @@ export const ResourceDrawer: React.FC<ResourceDrawerProps> = ({
     }
   };
 
-  // Downsample to 96 points for smooth, snappy Recharts rendering
-  const step = Math.max(1, Math.floor(metricsData.length / 96));
-  const sampledMetrics = metricsData.filter((_, idx) => idx % step === 0);
+  // Downsample to ~96 points for smooth Recharts rendering while preserving peak spikes
+  const bucketSize = Math.max(1, Math.floor(metricsData.length / 96));
+  const sampledMetrics: any[] = [];
+  for (let i = 0; i < metricsData.length; i += bucketSize) {
+    const bucket = metricsData.slice(i, i + bucketSize);
+    if (bucket.length > 0) {
+      // Pick the point with maximum CPU utilization in each window to preserve critical peak spikes
+      const peakPoint = bucket.reduce((max, cur) => (cur.cpu_pct > max.cpu_pct ? cur : max), bucket[0]);
+      sampledMetrics.push(peakPoint);
+    }
+  }
 
   // Compute live projected after curve
   const chartPoints = sampledMetrics.map((pt) => {
@@ -162,12 +172,27 @@ export const ResourceDrawer: React.FC<ResourceDrawerProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-3">
+            {liveTick && (
+              <div className="flex items-center space-x-2 text-xs bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 px-3 py-1.5 rounded-lg shadow-xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-400">Live Telemetry:</span>
+                <span className="font-mono font-bold text-white">{liveTick.cpu_pct}% CPU</span>
+                <span className="text-emerald-600">•</span>
+                <span className="font-mono text-emerald-300">{liveTick.net_out_mbps} Mbps</span>
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Drawer Body */}
@@ -211,6 +236,13 @@ export const ResourceDrawer: React.FC<ResourceDrawerProps> = ({
                       <div className="text-xs text-slate-500 font-medium">Monthly Savings</div>
                       <div className="text-xl font-black font-mono text-emerald-600">
                         Save ₹{recommendation.monthly_savings_inr.toLocaleString("en-IN")}/mo
+                      </div>
+                    </div>
+                  ) : recommendation.monthly_savings_inr < 0 ? (
+                    <div className="text-right">
+                      <div className="text-xs text-amber-700 font-medium">Capacity Upgrade</div>
+                      <div className="text-xl font-black font-mono text-amber-600">
+                        +₹{Math.abs(recommendation.monthly_savings_inr).toLocaleString("en-IN")}/mo
                       </div>
                     </div>
                   ) : (

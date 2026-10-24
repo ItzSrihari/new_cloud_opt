@@ -3,6 +3,11 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import dotenv from 'dotenv';
+import { createChatHandler } from './chatbot';
+
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 8002;
@@ -120,11 +125,9 @@ function computeDynamicFinancials(filterEnv?: string, filterReg?: string, filter
 
     if (status === 'accepted') {
       acceptedCount++;
-      if (sav > 0) {
-        totalAcceptedSavings += sav;
-        const envKey = rec.environment?.toLowerCase() || 'prod';
-        envAcceptedSavings[envKey] = (envAcceptedSavings[envKey] || 0) + sav;
-      }
+      totalAcceptedSavings += sav;
+      const envKey = rec.environment?.toLowerCase() || 'prod';
+      envAcceptedSavings[envKey] = (envAcceptedSavings[envKey] || 0) + sav;
     } else if (status === 'rejected') {
       rejectedCount++;
     } else {
@@ -435,14 +438,38 @@ app.post('/api/internal/ingest-tick', (req: Request, res: Response) => {
   lastSimulatedTime = simulated_time || new Date().toISOString();
   latestLiveTicks = ticks || [];
 
+  let totalCpu = 0;
+  let totalNet = 0;
+  const liveMap: Record<string, { cpu_pct: number; memory_pct: number; net_out_mbps: number }> = {};
+
+  if (ticks && Array.isArray(ticks)) {
+    for (const t of ticks) {
+      totalCpu += t.cpu_pct || 0;
+      totalNet += t.net_out_mbps || 0;
+      if (t.resource_id) {
+        liveMap[t.resource_id] = {
+          cpu_pct: t.cpu_pct,
+          memory_pct: t.memory_pct,
+          net_out_mbps: t.net_out_mbps,
+        };
+      }
+    }
+  }
+
+  const avgCpu = ticks && ticks.length > 0 ? Math.round((totalCpu / ticks.length) * 10) / 10 : 0;
+  const avgNet = ticks && ticks.length > 0 ? Math.round((totalNet / ticks.length) * 10) / 10 : 0;
+
   broadcastSSE('tick', {
     simulated_time: lastSimulatedTime,
-    tick_count,
+    tick_count: tick_count || (ticks ? ticks.length : 0),
+    avg_cpu: avgCpu,
+    avg_net_mbps: avgNet,
+    live_ticks: liveMap,
     sample_tick: ticks && ticks.length > 0 ? ticks[0] : null,
     anomaly_injected,
   });
 
-  res.json({ ok: true });
+  res.json({ ok: true, avg_cpu: avgCpu, avg_net_mbps: avgNet });
 });
 
 // 11. POST /api/internal/ingest-anomaly (from Server 1 Live Anomaly Trigger)
@@ -466,6 +493,9 @@ app.post('/api/internal/ingest-anomaly', (req: Request, res: Response) => {
 
   res.json({ ok: true, alert: alertObj });
 });
+
+// 12. POST /api/chat (Gemini AI FinOps Copilot)
+app.post('/api/chat', createChatHandler(() => analyticsData, () => computeDynamicFinancials()));
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

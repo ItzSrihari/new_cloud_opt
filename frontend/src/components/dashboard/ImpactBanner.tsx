@@ -82,17 +82,17 @@ export const ImpactBanner: React.FC<ImpactBannerProps> = ({
             </div>
           </div>
 
-          {/* Accepted Savings (Live Dynamic Counter) */}
-          <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 -m-1">
-            <div className="text-xs uppercase tracking-wider text-emerald-400 font-bold mb-1 flex items-center space-x-1">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Accepted Savings</span>
+          {/* Accepted Savings */}
+          <div>
+            <div className={`text-xs uppercase tracking-wider ${acceptedSavings < 0 ? "text-amber-400" : "text-emerald-400"} font-semibold mb-1 flex items-center space-x-1`}>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{acceptedSavings < 0 ? "Net Spend Change" : "Accepted Savings"}</span>
             </div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400 animate-pulse">
-              ₹{acceptedSavings.toLocaleString("en-IN")}
-              <span className="text-xs text-emerald-300 font-sans font-normal ml-1">/mo</span>
+            <div className={`text-2xl sm:text-3xl font-black font-mono ${acceptedSavings < 0 ? "text-amber-300" : "text-emerald-400"}`}>
+              {acceptedSavings < 0 ? `-₹${Math.abs(acceptedSavings).toLocaleString("en-IN")}` : `₹${acceptedSavings.toLocaleString("en-IN")}`}
+              <span className="text-xs text-slate-400 font-sans font-normal ml-1">/mo</span>
             </div>
-            <div className="text-[11px] text-emerald-300/80 mt-1 font-medium">
+            <div className="text-[11px] text-slate-400 mt-1">
               {acceptedCount} optimization{acceptedCount === 1 ? "" : "s"} approved
             </div>
           </div>
@@ -108,7 +108,11 @@ export const ImpactBanner: React.FC<ImpactBannerProps> = ({
             </div>
             <div className="flex items-center space-x-1 text-[11px] text-blue-400 mt-1 font-medium">
               <TrendingDown className="w-3.5 h-3.5" />
-              <span>Run-rate savings: ₹{((currentMonthlySpend - projectedMonthlySpend) * 12).toLocaleString("en-IN")}/yr</span>
+              <span>
+                {currentMonthlySpend >= projectedMonthlySpend
+                  ? `Run-rate savings: ₹${((currentMonthlySpend - projectedMonthlySpend) * 12).toLocaleString("en-IN")}/yr`
+                  : `Capacity investment: +₹${((projectedMonthlySpend - currentMonthlySpend) * 12).toLocaleString("en-IN")}/yr`}
+              </span>
             </div>
           </div>
         </div>

@@ -21,12 +21,14 @@ interface ResourceTableProps {
   resources: any[];
   onSelectResource: (resource: any) => void;
   selectedResourceId?: string;
+  liveTicksMap?: Record<string, any>;
 }
 
 export const ResourceTable: React.FC<ResourceTableProps> = ({
   resources,
   onSelectResource,
   selectedResourceId,
+  liveTicksMap,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -324,24 +326,42 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
                     )}
                   </td>
 
-                  {/* P99 CPU */}
+                  {/* P99 CPU & Live Telemetry */}
                   <td className="py-3 px-3 font-mono">
                     {res.type === "vm" ? (
                       <div>
-                        <span
-                          className={`font-bold ${
-                            res.p99_cpu >= 85
-                              ? "text-blue-600"
-                              : res.p99_cpu > 72
-                              ? "text-rose-600"
-                              : "text-slate-700"
-                          }`}
-                        >
-                          {res.p99_cpu}%
-                        </span>
-                        <div className="text-[10px] text-slate-400">
-                          avg: {res.avg_cpu}%
-                        </div>
+                        {(() => {
+                          const liveTick = liveTicksMap ? liveTicksMap[res.resource_id] : null;
+                          return (
+                            <>
+                              <div className="flex items-center space-x-1.5">
+                                <span
+                                  className={`font-bold ${
+                                    res.p99_cpu >= 85
+                                      ? "text-blue-600"
+                                      : res.p99_cpu > 72
+                                      ? "text-rose-600"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {res.p99_cpu}%
+                                </span>
+                                {liveTick && (
+                                  <span
+                                    className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] px-1.5 py-0.5 rounded font-bold transition-all shadow-xs"
+                                    title={`Instantaneous Utho telemetry: ${liveTick.cpu_pct}% CPU • ${liveTick.net_out_mbps} Mbps network egress`}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>Live: {liveTick.cpu_pct}%</span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                avg: {res.avg_cpu}% {liveTick ? `• ${liveTick.net_out_mbps} Mbps` : ""}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <span className="text-slate-400">—</span>

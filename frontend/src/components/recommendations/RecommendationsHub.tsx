@@ -19,7 +19,7 @@ import {
   Clock,
   Layers,
 } from "lucide-react";
-import { updateRecommendationStatus, bulkUpdateRecommendations } from "@/lib/api";
+import { updateRecommendationStatus } from "@/lib/api";
 
 interface RecommendationsHubProps {
   recommendations: any[];
@@ -38,7 +38,6 @@ export const RecommendationsHub: React.FC<RecommendationsHubProps> = ({
   const [activeModalRec, setActiveModalRec] = useState<any | null>(null);
   const [copiedCli, setCopiedCli] = useState(false);
   const [copiedTf, setCopiedTf] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleStatusChange = async (id: string, status: "accepted" | "rejected" | "pending") => {
     try {
@@ -46,18 +45,6 @@ export const RecommendationsHub: React.FC<RecommendationsHubProps> = ({
       onRecommendationUpdated();
     } catch (e) {
       console.error(e);
-    }
-  };
-
-  const handleBulkAcceptLowRisk = async () => {
-    try {
-      setIsProcessing(true);
-      await bulkUpdateRecommendations("accept_low_risk");
-      onRecommendationUpdated();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -146,19 +133,10 @@ ${r.iac_snippets?.utho_cli || "N/A"}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={handleBulkAcceptLowRisk}
-            disabled={isProcessing}
-            className="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Accept All Low-Risk</span>
-          </button>
-
+        <div className="flex items-center">
           <button
             onClick={handleExportMarkdownReport}
-            className="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all"
+            className="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all whitespace-nowrap"
           >
             <FileDown className="w-4 h-4 text-slate-600" />
             <span>Export Executive FinOps Report (.md)</span>
@@ -229,8 +207,8 @@ ${r.iac_snippets?.utho_cli || "N/A"}
         </span>
       </div>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Cards List (Full Width 1-in-a-row) */}
+      <div className="grid grid-cols-1 gap-4">
         {filtered.map((rec) => {
           const isAccepted = rec.status === "accepted";
           const isRejected = rec.status === "rejected";
@@ -287,6 +265,12 @@ ${r.iac_snippets?.utho_cli || "N/A"}
                       Save ₹{rec.monthly_savings_inr.toLocaleString("en-IN")}/mo
                     </span>
                   </div>
+                ) : rec.monthly_savings_inr < 0 ? (
+                  <div className="text-right">
+                    <span className="bg-amber-100 text-amber-900 border border-amber-300 font-mono font-bold text-xs px-2.5 py-1 rounded-full whitespace-nowrap">
+                      +₹{Math.abs(rec.monthly_savings_inr).toLocaleString("en-IN")}/mo (Upsize)
+                    </span>
+                  </div>
                 ) : (
                   <div className="text-right">
                     <span className="bg-blue-100 text-blue-800 font-bold text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap">
@@ -297,12 +281,12 @@ ${r.iac_snippets?.utho_cli || "N/A"}
               </div>
 
               {/* Action Spec Transition */}
-              <div className="mt-3.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-                <div className="font-mono text-slate-600 truncate max-w-[45%]">
+              <div className="mt-3.5 bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                <div className="font-mono text-slate-700 font-medium truncate flex-1">
                   {rec.current_config}
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mx-2" />
-                <div className="font-mono font-bold text-blue-700 truncate max-w-[45%] text-right">
+                <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0 mx-3" />
+                <div className="font-mono font-bold text-blue-700 text-right truncate flex-1">
                   {rec.target_config}
                 </div>
               </div>
@@ -342,7 +326,7 @@ ${r.iac_snippets?.utho_cli || "N/A"}
               )}
 
               {/* Plain-Language Reason */}
-              <p className="text-xs text-slate-600 mt-3 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-slate-600 mt-3 leading-relaxed">
                 {rec.plain_language_reason}
               </p>
 

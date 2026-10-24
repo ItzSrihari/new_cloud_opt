@@ -13,13 +13,13 @@ import { RecommendationsHub } from "@/components/recommendations/Recommendations
 import { WhatIfSimulator } from "@/components/simulator/WhatIfSimulator";
 import { AlertsAndForecastView } from "@/components/alerts/AlertsAndForecastView";
 import { AssumptionsSheet } from "@/components/assumptions/AssumptionsSheet";
+import { ChatbotWidget } from "@/components/chat/ChatbotWidget";
 import { fetchOverview, fetchResources, fetchRecommendations } from "@/lib/api";
 import { Filter, RefreshCw } from "lucide-react";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [currentRole, setCurrentRole] = useState<"engineer" | "finops" | "executive">("finops");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Global filters
   const [filterRegion, setFilterRegion] = useState("all");
@@ -32,6 +32,17 @@ export default function DashboardPage() {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [selectedResource, setSelectedResource] = useState<any | null>(null);
   const [simulatedTime, setSimulatedTime] = useState(new Date().toISOString());
+  const [liveTicksMap, setLiveTicksMap] = useState<Record<string, any>>({});
+  const [liveFleetTelemetry, setLiveFleetTelemetry] = useState<{
+    avg_cpu: number;
+    avg_net_mbps: number;
+    tick_count: number;
+  }>({
+    avg_cpu: 24.5,
+    avg_net_mbps: 18.2,
+    tick_count: 0,
+  });
+  const [isLivePulsing, setIsLivePulsing] = useState(false);
   const [liveAlertBanner, setLiveAlertBanner] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,6 +84,18 @@ export default function DashboardPage() {
           if (data.simulated_time) {
             setSimulatedTime(data.simulated_time);
           }
+          if (data.live_ticks) {
+            setLiveTicksMap(data.live_ticks);
+          }
+          if (data.avg_cpu !== undefined) {
+            setLiveFleetTelemetry({
+              avg_cpu: data.avg_cpu,
+              avg_net_mbps: data.avg_net_mbps || 0,
+              tick_count: data.tick_count || 0,
+            });
+          }
+          setIsLivePulsing(true);
+          setTimeout(() => setIsLivePulsing(false), 1200);
         } else if (data.type === "anomaly") {
           setLiveAlertBanner(data);
           setTimeout(() => setLiveAlertBanner(null), 8000);
@@ -91,35 +114,18 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
-      {/* Left Navigation Sidebar */}
+      {/* Left Navigation Sidebar (Non-collapsible) */}
       <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
         activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          // On mobile, auto-close sidebar after selection
-          if (typeof window !== "undefined" && window.innerWidth < 1024) {
-            setSidebarOpen(false);
-          }
-        }}
+        onTabChange={(tab) => setActiveTab(tab)}
         pendingRecCount={overviewData?.pending_count || 0}
         criticalAlertCount={2}
       />
 
-      {/* Mobile Backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-xs lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Right Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar with hamburger toggle and quick actions */}
+        {/* Topbar with quick actions */}
         <Navbar
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           onAnomalyTriggered={(info) => {
             setLiveAlertBanner({
               title: `Live Spike Injected on ${info.target_name || info.target_resource_id}`,
@@ -226,6 +232,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Live Telemetry Stream Bubble (Clean End-to-End Pill) */}
+        <div className="px-4 sm:px-6 lg:px-8 pt-4 pb-1">
+          <div className="w-full bg-slate-900 text-slate-200 rounded-full px-6 py-2.5 flex items-center justify-between text-xs border border-slate-800 shadow-xs">
+            <span className="font-semibold text-slate-100">
+              Live Utho Telemetry Stream
+            </span>
+
+            <div className="flex items-center space-x-6 text-xs">
+              <div className="flex items-center space-x-1.5 font-mono">
+                <span className="text-slate-400 font-sans">Fleet Avg CPU:</span>
+                <span className="font-bold text-emerald-400">
+                  {liveFleetTelemetry.avg_cpu}%
+                </span>
+              </div>
+              <div className="flex items-center space-x-1.5 font-mono">
+                <span className="text-slate-400 font-sans">Egress:</span>
+                <span className="font-bold text-sky-400">
+                  {liveFleetTelemetry.avg_net_mbps} Mbps
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content Body */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
           {/* Sticky Impact Banner */}
@@ -278,9 +308,21 @@ export default function DashboardPage() {
                 <BillingHistoryAndForecastChart
                   billingHistory={overviewData?.billing_history_6m || []}
                   forecastSpend={[
-                    { period: "+30 Days", unoptimized_spend_inr: 512000, optimized_spend_inr: 298000 },
-                    { period: "+60 Days", unoptimized_spend_inr: 538000, optimized_spend_inr: 295000 },
-                    { period: "+90 Days", unoptimized_spend_inr: 565000, optimized_spend_inr: 292550 },
+                    {
+                      period: "+30 Days",
+                      unoptimized_spend_inr: 512000,
+                      optimized_spend_inr: Math.round((overviewData?.projected_monthly_spend_inr || 298000) * 1.018),
+                    },
+                    {
+                      period: "+60 Days",
+                      unoptimized_spend_inr: 538000,
+                      optimized_spend_inr: Math.round((overviewData?.projected_monthly_spend_inr || 295000) * 1.008),
+                    },
+                    {
+                      period: "+90 Days",
+                      unoptimized_spend_inr: 565000,
+                      optimized_spend_inr: overviewData?.projected_monthly_spend_inr || 292550,
+                    },
                   ]}
                 />
 
@@ -298,6 +340,7 @@ export default function DashboardPage() {
               resources={resources}
               onSelectResource={(res) => setSelectedResource(res)}
               selectedResourceId={selectedResource?.resource_id}
+              liveTicksMap={liveTicksMap}
             />
           )}
 
@@ -323,10 +366,14 @@ export default function DashboardPage() {
         {selectedResource && (
           <ResourceDrawer
             resource={selectedResource}
+            liveTick={liveTicksMap ? liveTicksMap[selectedResource.resource_id] : null}
             onClose={() => setSelectedResource(null)}
             onRecommendationUpdated={loadData}
           />
         )}
+
+        {/* Floating Gemini AI FinOps Copilot */}
+        <ChatbotWidget />
 
         {/* Footer */}
         <footer className="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-500">

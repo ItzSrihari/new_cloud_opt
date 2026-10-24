@@ -106,3 +106,22 @@ export async function triggerLiveAnomaly(targetResourceId?: string) {
   if (!res.ok) throw new Error("Failed to trigger live anomaly");
   return res.json();
 }
+
+export interface ChatMessage {
+  role: "user" | "model";
+  content: string;
+}
+
+export async function sendChatMessage(message: string, history: ChatMessage[] = []) {
+  const res = await fetch(`${API_BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, history }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || errData.details || "Failed to send chat message");
+  }
+  return res.json() as Promise<{ reply: string; warning?: string }>;
+}
+

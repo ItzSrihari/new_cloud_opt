@@ -145,32 +145,36 @@ export const RolePerspectiveCards: React.FC<RoleCardsProps> = ({
         {/* Card 3: Realized Monthly Cut */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs uppercase font-bold tracking-wider text-emerald-700">Realized Monthly Cut</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className={`text-xs uppercase font-bold tracking-wider ${acceptedSavings < 0 ? "text-amber-700" : "text-emerald-700"}`}>
+              {acceptedSavings < 0 ? "Realized Net Change" : "Realized Monthly Cut"}
+            </span>
+            <div className={`w-8 h-8 rounded-lg ${acceptedSavings < 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"} flex items-center justify-center`}>
               <Coins className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black font-mono text-emerald-600">
-            ₹{acceptedSavings.toLocaleString("en-IN")}
+          <div className={`text-2xl font-black font-mono ${acceptedSavings < 0 ? "text-amber-600" : "text-emerald-600"}`}>
+            {acceptedSavings < 0 ? `-₹${Math.abs(acceptedSavings).toLocaleString("en-IN")}` : `₹${acceptedSavings.toLocaleString("en-IN")}`}
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Direct EBITDA margin improvement on current billing cycle upon execution.
+            {acceptedSavings < 0 ? "Proactive capacity upsize investment for scaling reliability." : "Direct EBITDA margin improvement on current billing cycle upon execution."}
           </p>
         </div>
 
         {/* Card 4: Run-Rate Savings */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs uppercase font-bold tracking-wider text-blue-700">Annualized Run-Rate</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <span className={`text-xs uppercase font-bold tracking-wider ${acceptedSavings < 0 ? "text-amber-700" : "text-blue-700"}`}>
+              {acceptedSavings < 0 ? "Annualized Investment" : "Annualized Run-Rate"}
+            </span>
+            <div className={`w-8 h-8 rounded-lg ${acceptedSavings < 0 ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"} flex items-center justify-center`}>
               <Layers className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black font-mono text-blue-600">
-            ₹{(acceptedSavings * 12).toLocaleString("en-IN")}
+          <div className={`text-2xl font-black font-mono ${acceptedSavings < 0 ? "text-amber-600" : "text-blue-600"}`}>
+            {acceptedSavings < 0 ? `+₹${Math.abs(acceptedSavings * 12).toLocaleString("en-IN")}` : `₹${(acceptedSavings * 12).toLocaleString("en-IN")}`}
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Contractual and operational FinOps savings projected across the next 12 rolling months.
+            {acceptedSavings < 0 ? "Annual infrastructure expansion cost to prevent capacity exhaustion outages." : "Contractual and operational FinOps savings projected across the next 12 rolling months."}
           </p>
         </div>
       </div>
