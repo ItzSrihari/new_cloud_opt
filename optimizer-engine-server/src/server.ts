@@ -3,6 +3,11 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import dotenv from 'dotenv';
+import { createChatHandler } from './chatbot';
+
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 8002;
@@ -14,6 +19,8 @@ app.use(express.json());
 const CACHE_DIR = path.join(__dirname, '..', 'cache');
 const CACHE_FILE = path.join(CACHE_DIR, 'analytics_cache.json');
 const CLI_RUNNER_PATH = path.join(__dirname, '..', 'analytics', 'cli_runner.py');
+const VENV_PYTHON = path.join(__dirname, '..', '..', '.venv', 'bin', 'python');
+const PYTHON_BIN = fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : (process.env.PYTHON_PATH || 'python3');
 
 interface AnalyticsState {
   resources: any[];
@@ -62,7 +69,7 @@ function loadAnalyticsCache(): boolean {
 if (!loadAnalyticsCache()) {
   console.log('[Optimizer-Server] Cache missing, running Python analytics generator...');
   try {
-    const child = spawn('python', [CLI_RUNNER_PATH, 'generate_all'], { stdio: 'inherit' });
+    const child = spawn(PYTHON_BIN, [CLI_RUNNER_PATH, 'generate_all'], { stdio: 'inherit' });
     child.on('close', (code) => {
       console.log(`[Optimizer-Server] Generator completed with code ${code}`);
       loadAnalyticsCache();
@@ -358,7 +365,7 @@ app.post('/api/what-if', (req: Request, res: Response) => {
   const params = req.body;
 
   // Execute Python runner what_if via stdin
-  const child = spawn('python', [CLI_RUNNER_PATH, 'what_if']);
+  const child = spawn(PYTHON_BIN, [CLI_RUNNER_PATH, 'what_if']);
   let output = '';
   let errorOutput = '';
 
@@ -466,6 +473,9 @@ app.post('/api/internal/ingest-anomaly', (req: Request, res: Response) => {
 
   res.json({ ok: true, alert: alertObj });
 });
+
+// 12. POST /api/chat (Gemini AI FinOps Copilot)
+app.post('/api/chat', createChatHandler(() => analyticsData, () => computeDynamicFinancials()));
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

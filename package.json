@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "SmartCloud Optimizer — Utho Cloud Rightsizing, FinOps & Anomaly Detection Platform",
   "scripts": {
-    "start:infra": "cd utho-infra-server && python -m uvicorn main:app --host 0.0.0.0 --port 8001",
+    "start:infra": "cd utho-infra-server && (../.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8001 || python3 -m uvicorn main:app --host 0.0.0.0 --port 8001 || python -m uvicorn main:app --host 0.0.0.0 --port 8001)",
     "start:optimizer": "cd optimizer-engine-server && npx tsx src/server.ts",
     "start:frontend": "cd frontend && npm run dev",
     "dev": "npx concurrently -k -n \"INFRA,OPTIMIZER,WEB\" -c \"magenta,blue,cyan\" \"npm run start:infra\" \"npm run start:optimizer\" \"npm run start:frontend\""

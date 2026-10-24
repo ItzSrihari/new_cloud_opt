@@ -13,6 +13,7 @@ import { RecommendationsHub } from "@/components/recommendations/Recommendations
 import { WhatIfSimulator } from "@/components/simulator/WhatIfSimulator";
 import { AlertsAndForecastView } from "@/components/alerts/AlertsAndForecastView";
 import { AssumptionsSheet } from "@/components/assumptions/AssumptionsSheet";
+import { ChatbotWidget } from "@/components/chat/ChatbotWidget";
 import { fetchOverview, fetchResources, fetchRecommendations } from "@/lib/api";
 import { Filter, RefreshCw } from "lucide-react";
 
@@ -327,6 +328,9 @@ export default function DashboardPage() {
             onRecommendationUpdated={loadData}
           />
         )}
+
+        {/* Floating Gemini AI FinOps Copilot */}
+        <ChatbotWidget />
 
         {/* Footer */}
         <footer className="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-500">
