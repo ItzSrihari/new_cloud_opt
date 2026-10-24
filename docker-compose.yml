@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Server 1: Utho Cloud Infrastructure & Telemetry Simulator
+  utho-infra-server:
+    container_name: smartcloud-infra
+    build:
+      context: ./utho-infra-server
+      dockerfile: Dockerfile
+    image: smartcloud-infra:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - OPTIMIZER_SERVER_URL=http://optimizer-engine-server:8002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - smartcloud-net
+    restart: unless-stopped
+
+  # Server 2: Rightsizing, FinOps Analytics & Gemini Chatbot Engine
+  optimizer-engine-server:
+    container_name: smartcloud-optimizer
+    build:
+      context: .
+      dockerfile: optimizer-engine-server/Dockerfile
+    image: smartcloud-optimizer:latest
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - INFRA_SERVER_URL=http://utho-infra-server:8001
+      - PYTHON_BIN=python
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-lite-latest}
+    depends_on:
+      utho-infra-server:
+        condition: service_healthy
+    volumes:
+      - optimizer-cache:/app/optimizer-engine-server/cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/overview"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - smartcloud-net
+    restart: unless-stopped
+
+  # Web UI: Next.js 14 Dashboard
+  frontend:
+    container_name: smartcloud-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8002}
+        - NEXT_PUBLIC_INFRA_URL=${NEXT_PUBLIC_INFRA_URL:-http://localhost:8001}
+    image: smartcloud-frontend:latest
+    ports:
+      - "3001:3000"
+    depends_on:
+      optimizer-engine-server:
+        condition: service_healthy
+    networks:
+      - smartcloud-net
+    restart: unless-stopped
+
+volumes:
+  optimizer-cache:
+    driver: local
+
+networks:
+  smartcloud-net:
+    driver: bridge
+

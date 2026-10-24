@@ -30,6 +30,7 @@ def load_or_fetch_all_data():
     Checks if Server 1 is reachable with a single 300ms ping.
     If online, loads from Server 1; otherwise generates in-memory directly in <1 second.
     """
+    infra_url = os.environ.get("INFRA_SERVER_URL", "http://localhost:8001").rstrip("/")
     inventory = None
     billing_history = None
     metrics_cache = {}
@@ -37,7 +38,7 @@ def load_or_fetch_all_data():
     server1_online = False
     try:
         with httpx.Client(timeout=0.3) as client:
-            res = client.get("http://localhost:8001/health")
+            res = client.get(f"{infra_url}/health")
             if res.status_code == 200:
                 server1_online = True
     except Exception:
@@ -46,17 +47,17 @@ def load_or_fetch_all_data():
     if server1_online:
         try:
             with httpx.Client(timeout=2.0) as client:
-                inv_res = client.get("http://localhost:8001/infra/inventory")
+                inv_res = client.get(f"{infra_url}/infra/inventory")
                 if inv_res.status_code == 200:
                     inventory = inv_res.json()["resources"]
-                bill_res = client.get("http://localhost:8001/infra/billing-history")
+                bill_res = client.get(f"{infra_url}/infra/billing-history")
                 if bill_res.status_code == 200:
                     billing_history = bill_res.json()["history"]
                 
                 vms = [r for r in inventory if r["type"] == "vm"]
                 for vm in vms:
                     rid = vm["resource_id"]
-                    m_res = client.get(f"http://localhost:8001/infra/metrics?resource_id={rid}")
+                    m_res = client.get(f"{infra_url}/infra/metrics?resource_id={rid}")
                     if m_res.status_code == 200:
                         metrics_cache[rid] = m_res.json().get("metrics", [])
         except Exception:

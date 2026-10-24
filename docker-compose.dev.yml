@@ -1,0 +1,26 @@
+version: '3.8'
+
+# Development Compose Override for Hot-Reloading
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  utho-infra-server:
+    command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    volumes:
+      - ./utho-infra-server:/app
+
+  optimizer-engine-server:
+    command: ["npx", "tsx", "watch", "src/server.ts"]
+    volumes:
+      - ./optimizer-engine-server:/app/optimizer-engine-server
+      - ./utho-infra-server/catalog.py:/app/utho-infra-server/catalog.py
+      - ./utho-infra-server/generator.py:/app/utho-infra-server/generator.py
+      - /app/optimizer-engine-server/node_modules
+
+  frontend:
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
