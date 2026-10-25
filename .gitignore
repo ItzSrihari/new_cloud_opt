@@ -2,9 +2,14 @@ node_modules
 .env
 .env*.local
 .venv
+venv
 dist
 .DS_Store
 .next
 frontend/.next
 *.pyc
 __pycache__
+optimizer-engine-server/server
+optimizer-engine-server/optimizer-engine-server
+optimizer-engine-server/*.exe
+
