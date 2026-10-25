@@ -311,17 +311,17 @@ export default function DashboardPage() {
                     {
                       period: "+30 Days",
                       unoptimized_spend_inr: 512000,
-                      optimized_spend_inr: Math.round((overviewData?.projected_monthly_spend_inr || 298000) * 1.018),
+                      optimized_spend_inr: Math.max(0, 512000 - (overviewData?.accepted_savings_inr || 0)),
                     },
                     {
                       period: "+60 Days",
                       unoptimized_spend_inr: 538000,
-                      optimized_spend_inr: Math.round((overviewData?.projected_monthly_spend_inr || 295000) * 1.008),
+                      optimized_spend_inr: Math.max(0, 538000 - Math.round((overviewData?.accepted_savings_inr || 0) * 1.02)),
                     },
                     {
                       period: "+90 Days",
                       unoptimized_spend_inr: 565000,
-                      optimized_spend_inr: overviewData?.projected_monthly_spend_inr || 292550,
+                      optimized_spend_inr: Math.max(0, 565000 - Math.round((overviewData?.accepted_savings_inr || 0) * 1.05)),
                     },
                   ]}
                 />

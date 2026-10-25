@@ -27,6 +27,10 @@ export const BillingHistoryAndForecastChart: React.FC<BillingProps> = ({
 }) => {
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
 
+  const currentBaseline = billingHistory && billingHistory.length > 0
+    ? billingHistory[billingHistory.length - 1].total_inr
+    : 487200;
+
   // Combine historical months + 90-day forecast points into a single seamless chart sequence
   const chartData = [
     ...(billingHistory || []).map((b) => ({
@@ -43,12 +47,12 @@ export const BillingHistoryAndForecastChart: React.FC<BillingProps> = ({
     // Link current month to forecast
     {
       label: "Current (M0)",
-      total: billingHistory && billingHistory.length > 0 ? billingHistory[billingHistory.length - 1].total_inr : 487200,
+      total: currentBaseline,
       prod: null,
       staging: null,
       dev: null,
-      unoptimized_forecast: 487200,
-      optimized_forecast: 487200,
+      unoptimized_forecast: currentBaseline,
+      optimized_forecast: currentBaseline,
       notes: "Baseline pivot point",
       isHistorical: false,
     },
@@ -60,7 +64,9 @@ export const BillingHistoryAndForecastChart: React.FC<BillingProps> = ({
       dev: null,
       unoptimized_forecast: f.unoptimized_spend_inr,
       optimized_forecast: f.optimized_spend_inr,
-      notes: `Projected savings: ₹${(f.unoptimized_spend_inr - f.optimized_spend_inr).toLocaleString("en-IN")}/mo`,
+      notes: f.unoptimized_spend_inr === f.optimized_spend_inr
+        ? "No optimizations approved (tracking unoptimized sprawl)"
+        : `Projected savings: ₹${(f.unoptimized_spend_inr - f.optimized_spend_inr).toLocaleString("en-IN")}/mo`,
       isHistorical: false,
     })),
   ];
