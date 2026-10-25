@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # VM 1: Utho Cloud Infrastructure & Telemetry Simulator
+  utho-infra-server:
+    container_name: smartcloud-infra
+    build:
+      context: ./utho-infra-server
+      dockerfile: Dockerfile
+    image: smartcloud-infra:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      # Destination Optimizer Engine URL on VM 2 (e.g. http://10.0.0.5:8002 or public IP/DNS)
+      - OPTIMIZER_SERVER_URL=${OPTIMIZER_SERVER_URL:-http://localhost:8002}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped

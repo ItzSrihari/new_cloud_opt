@@ -37,7 +37,7 @@ def load_or_fetch_all_data():
 
     server1_online = False
     try:
-        with httpx.Client(timeout=0.3) as client:
+        with httpx.Client(timeout=3.0) as client:
             res = client.get(f"{infra_url}/health")
             if res.status_code == 200:
                 server1_online = True
@@ -46,7 +46,7 @@ def load_or_fetch_all_data():
 
     if server1_online:
         try:
-            with httpx.Client(timeout=2.0) as client:
+            with httpx.Client(timeout=10.0) as client:
                 inv_res = client.get(f"{infra_url}/infra/inventory")
                 if inv_res.status_code == 200:
                     inventory = inv_res.json()["resources"]
