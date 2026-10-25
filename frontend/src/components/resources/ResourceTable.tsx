@@ -10,7 +10,6 @@ import {
   Search,
   Filter,
   ArrowUpDown,
-  ExternalLink,
   ChevronRight,
   AlertTriangle,
   Clock,
@@ -117,8 +116,9 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
       const q = searchTerm.toLowerCase();
       const matchId = r.resource_id?.toLowerCase().includes(q);
       const matchName = r.name?.toLowerCase().includes(q);
+      const matchPlan = r.plan_id?.toLowerCase().includes(q);
       const matchTeam = r.team?.toLowerCase().includes(q);
-      if (!matchId && !matchName && !matchTeam) return false;
+      if (!matchId && !matchName && !matchPlan && !matchTeam) return false;
     }
     if (filterType !== "all" && r.type !== filterType) return false;
     if (filterEnv !== "all" && r.environment !== filterEnv) return false;
@@ -155,7 +155,7 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by ID, name, or team..."
+              placeholder="Search by ID, name, or plan..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
@@ -230,7 +230,6 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
               <th className="py-3 px-4">Resource</th>
               <th className="py-3 px-3">Type</th>
               <th className="py-3 px-3">Region & Env</th>
-              <th className="py-3 px-3">Team</th>
               <th className="py-3 px-3">Spec / Plan</th>
               <th
                 className="py-3 px-3 cursor-pointer hover:text-slate-900"
@@ -251,7 +250,7 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
                 </div>
               </th>
               <th className="py-3 px-4">Status & Safety</th>
-              <th className="py-3 px-3 text-right">Actions</th>
+              <th className="py-3 px-3 w-8"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -261,7 +260,7 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
                 <tr
                   key={res.resource_id}
                   onClick={() => onSelectResource(res)}
-                  className={`cursor-pointer transition-colors hover:bg-blue-50/50 ${
+                  className={`group cursor-pointer transition-colors hover:bg-blue-50/50 ${
                     isSelected ? "bg-blue-50 border-l-4 border-blue-600" : ""
                   }`}
                 >
@@ -305,20 +304,10 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Team */}
-                  <td className="py-3 px-3 text-slate-600 font-medium">
-                    {res.team}
-                  </td>
-
                   {/* Spec / Plan */}
                   <td className="py-3 px-3 font-mono text-slate-700">
                     {res.type === "vm" ? (
-                      <div>
-                        <span className="font-semibold text-blue-700">{res.plan_id}</span>
-                        <div className="text-[10px] text-slate-400">
-                          {res.vcpu} vCPU / {res.ram_gb} GB
-                        </div>
-                      </div>
+                      <span className="font-semibold text-blue-700">{res.plan_id}</span>
                     ) : res.type === "block_volume" ? (
                       <span>{res.disk_gb} GB NVMe</span>
                     ) : (
@@ -381,18 +370,9 @@ export const ResourceTable: React.FC<ResourceTableProps> = ({
                     {getStatusBadge(res.status, res.p99_cpu)}
                   </td>
 
-                  {/* Action Link */}
+                  {/* Row Action Arrow */}
                   <td className="py-3 px-3 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectResource(res);
-                      }}
-                      className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 font-semibold text-xs py-1 px-2.5 rounded-lg hover:bg-blue-100 transition-all"
-                    >
-                      <span>Drill Down</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors inline-block" />
                   </td>
                 </tr>
               );

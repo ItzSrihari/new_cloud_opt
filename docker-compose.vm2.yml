@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # VM 2 Service A: Optimizer Engine Server (Rightsizing, FinOps, Gemini Copilot & SSE Stream)
+  optimizer-engine-server:
+    container_name: smartcloud-optimizer
+    build:
+      context: .
+      dockerfile: optimizer-engine-server/Dockerfile
+    image: smartcloud-optimizer:latest
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      # Utho Infra Server URL on VM 1 (e.g. http://10.0.0.4:8001 or private IP)
+      - INFRA_SERVER_URL=${INFRA_SERVER_URL:-http://localhost:8001}
+      - PYTHON_BIN=python
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-lite-latest}
+    volumes:
+      - optimizer-cache:/app/optimizer-engine-server/cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/overview"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # VM 2 Service B: Next.js 14 Dashboard
+  frontend:
+    container_name: smartcloud-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Browser-accessible address of VM 2 (e.g. http://<VM2_PUBLIC_IP>:8002)
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8002}
+        - NEXT_PUBLIC_INFRA_URL=${NEXT_PUBLIC_INFRA_URL:-http://localhost:8001}
+    image: smartcloud-frontend:latest
+    ports:
+      - "80:3000"
+      - "3000:3000"
+    depends_on:
+      optimizer-engine-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  optimizer-cache:
+    driver: local

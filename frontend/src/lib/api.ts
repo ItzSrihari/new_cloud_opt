@@ -98,6 +98,18 @@ export async function fetchAlertsAndForecast() {
 }
 
 export async function triggerLiveAnomaly(targetResourceId?: string) {
+  // First attempt via Optimizer proxy (keeps VM1 private in Azure)
+  try {
+    const res = await fetch(`${API_BASE}/api/sim/trigger-anomaly`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_resource_id: targetResourceId }),
+    });
+    if (res.ok) return await res.json();
+  } catch {
+    // Fall back to direct infra URL if optimizer proxy isn't reached
+  }
+
   const res = await fetch(`${INFRA_BASE}/sim/trigger-anomaly`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

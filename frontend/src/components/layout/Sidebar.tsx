@@ -39,20 +39,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="sticky top-0 left-0 z-40 h-screen w-64 bg-slate-900 text-white flex flex-col border-r border-slate-800 flex-shrink-0">
       {/* Brand Header */}
-      <div className="h-16 px-4 flex items-center border-b border-slate-800">
-        <div className="flex items-center space-x-2.5 overflow-hidden">
-          <div className="w-8 h-8 rounded-full border-2 border-blue-500 flex items-center justify-center font-bold text-blue-400 text-sm flex-shrink-0">
-            ✓
-          </div>
-          <div className="flex flex-col whitespace-nowrap">
-            <span className="text-xl font-black tracking-tight text-white leading-none">
-              utho
-            </span>
-            <span className="text-[10px] text-blue-400 font-semibold tracking-wide">
-              SmartCloud Optimizer
-            </span>
-          </div>
-        </div>
+      <div className="h-16 px-5 flex items-center border-b border-slate-800">
+        <img
+          src="/logo.png"
+          alt="Utho"
+          className="h-8 w-auto max-w-[180px] object-contain"
+        />
       </div>
 
       {/* Navigation Links */}

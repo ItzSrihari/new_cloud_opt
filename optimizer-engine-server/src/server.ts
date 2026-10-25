@@ -499,6 +499,22 @@ app.post('/api/internal/ingest-anomaly', (req: Request, res: Response) => {
 // 12. POST /api/chat (Gemini AI FinOps Copilot)
 app.post('/api/chat', createChatHandler(() => analyticsData, () => computeDynamicFinancials()));
 
+// 13. POST /api/sim/trigger-anomaly (Proxy to Utho Infra Server)
+app.post('/api/sim/trigger-anomaly', async (req: Request, res: Response) => {
+  try {
+    const response = await fetch(`${INFRA_SERVER_URL}/sim/trigger-anomaly`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body || {}),
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err: any) {
+    console.error('[Optimizer-Server] Error proxying trigger-anomaly:', err.message);
+    res.status(502).json({ error: 'Failed to reach Utho infra server', details: err.message });
+  }
+});
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({
@@ -511,6 +527,6 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`[Optimizer-Engine-Server] Listening on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Optimizer-Engine-Server] Listening on http://0.0.0.0:${PORT}`);
 });
